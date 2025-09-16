@@ -1,0 +1,68 @@
+name: Enhanced Unzip and Build APK
+
+on:
+  push:
+    paths:
+      - '*.zip'   # Ye workflow tab trigger hoga jab repo root me zip push ho
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ Checkout repo
+      - uses: actions/checkout@v3
+
+      # 2️⃣ Set up JDK
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      # 3️⃣ Create standard project folders
+      - name: Prepare project folders
+        run: |
+          mkdir -p gradle app/src app/libs
+
+      # 4️⃣ Unzip all relevant files (nested included)
+      - name: Unzip project files
+        run: |
+          shopt -s nullglob
+          for zip in *.zip; do
+            low=$(echo "$zip" | tr '[:upper:]' '[:lower:]')
+            if [[ "$low" == gradle*.zip ]]; then
+              unzip -o "$zip" -d gradle
+            elif [[ "$low" == src.zip ]]; then
+              unzip -o "$zip" -d app/src
+            elif [[ "$low" == lib.zip ]]; then
+              unzip -o "$zip" -d app/libs
+            elif [[ "$low" == *.jar.zip ]]; then
+              jarname="${zip%.zip}"
+              unzip -p "$zip" > "app/libs/$jarname"
+            fi
+          done
+
+      # 5️⃣ Copy root-level gradlew & build files if present
+      - name: Copy root-level files
+        run: |
+          for f in gradlew build.gradle.kts settings.gradle.kts; do
+            if [ -f "$f" ]; then
+              cp "$f" .
+            fi
+          done
+
+      # 6️⃣ Give execute permission to gradlew
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      # 7️⃣ Build APK
+      - name: Build APK
+        run: ./gradlew assembleDebug
+
+      # 8️⃣ Upload APK artifact
+      - name: Upload APK
+        uses: actions/upload-artifact@v3
+        with:
+          name: apk-files
+          path: '**/build/outputs/**/*.apk'
