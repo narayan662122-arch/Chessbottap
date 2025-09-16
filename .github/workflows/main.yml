@@ -1,0 +1,34 @@
+name: Unzip and Upload Artifact
+
+on:
+  workflow_dispatch:    # manual run ke liye
+  push:
+    paths:
+      - 'chessbottap_project.zip'  # zip push hone par auto trigger
+
+jobs:
+  unzip-and-upload:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ Checkout repo
+      - uses: actions/checkout@v4
+
+      # 2️⃣ Create folder for unzipped content
+      - name: Prepare folder
+        run: mkdir -p extracted-project
+
+      # 3️⃣ Unzip the uploaded zip file
+      - name: Unzip chessbottap_project.zip
+        run: unzip -o chessbottap_project.zip -d extracted-project
+
+      # 4️⃣ List contents (optional, debug)
+      - name: List unzipped files
+        run: ls -R extracted-project
+
+      # 5️⃣ Upload unzipped files as artifact
+      - name: Upload unzipped project as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: unzipped-project
+          path: extracted-project/
