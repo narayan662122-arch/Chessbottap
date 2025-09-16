@@ -3,24 +3,29 @@ name: Unzip on Upload
 on:
   push:
     paths:
-      - 'chessbottap_project.zip'  # sirf ye file push hone par trigger
+      - 'chessbottap_project.zip'
+  workflow_dispatch:
 
 jobs:
   unzip-job:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout repo
       - uses: actions/checkout@v4
 
-      # 2️⃣ Create output folder
       - name: Prepare folder
         run: mkdir -p extracted-project
 
-      # 3️⃣ Unzip the uploaded file
-      - name: Unzip chessbottap_project.zip
+      - name: Unzip zip file
         run: unzip chessbottap_project.zip -d extracted-project
 
-      # 4️⃣ List contents (optional, check)
-      - name: List unzipped files
+      - name: List contents
         run: ls -R extracted-project
+
+      - name: Commit unzipped files
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add extracted-project/
+          git commit -m "Add unzipped project files"
+          git push
